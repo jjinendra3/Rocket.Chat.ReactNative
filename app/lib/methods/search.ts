@@ -111,18 +111,16 @@ export const localSearchUsersMessageByRid = async ({ text = '', rid = '' }): Pro
 	return usersFromLocal;
 };
 
-export const search = async ({ text = '', filterUsers = true, filterRooms = true, rid = '' }): Promise<TSearch[]> => {
-	const searchText = text.trim();
-
+export const localSearch = async ({
+	text = '',
+	filterUsers = true,
+	filterRooms = true,
+	rid = ''
+}): Promise<{ localSearchData: TSearch[]; usernames: string[] }> => {
 	if (debounce) {
 		debounce('cancel');
 	}
-
 	let localSearchData = [];
-	// the users provided by localSearchUsersMessageByRid return the username properly, data.username
-	// Example: Diego Mello's user -> {name: "Diego Mello", username: "diego.mello"}
-	// Meanwhile, the username provided by localSearchSubscription is in name's property
-	// Example: Diego Mello's subscription -> {fname: "Diego Mello",  name: "diego.mello"}
 	let usernames = [];
 	if (rid && filterUsers) {
 		localSearchData = await localSearchUsersMessageByRid({ text, rid });
@@ -130,6 +128,23 @@ export const search = async ({ text = '', filterUsers = true, filterRooms = true
 	} else {
 		localSearchData = await localSearchSubscription({ text, filterUsers, filterRooms });
 		usernames = localSearchData.map(sub => sub.name as string);
+	}
+
+	return { localSearchData, usernames };
+};
+
+export const search = async ({
+	text = '',
+	filterUsers = true,
+	filterRooms = true,
+	rid = '',
+	localSearchData = [] as TSearch[],
+	usernames = [] as string[]
+}): Promise<TSearch[]> => {
+	const searchText = text.trim();
+
+	if (debounce) {
+		debounce('cancel');
 	}
 
 	const data: TSearch[] = localSearchData;

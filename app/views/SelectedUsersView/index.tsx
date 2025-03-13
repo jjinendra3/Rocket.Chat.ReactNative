@@ -22,7 +22,7 @@ import { ChatsStackParamList } from '../../stacks/types';
 import { useTheme } from '../../theme';
 import { showErrorAlert } from '../../lib/methods/helpers/info';
 import log, { events, logEvent } from '../../lib/methods/helpers/log';
-import { search as searchMethod, TSearch } from '../../lib/methods';
+import { localSearch, search as searchMethod, TSearch } from '../../lib/methods';
 import { isGroupChat as isGroupChatMethod } from '../../lib/methods/helpers';
 import { useAppSelector } from '../../lib/hooks';
 import Header from './Header';
@@ -115,7 +115,9 @@ const SelectedUsersView = () => {
 	}, [dispatch]);
 
 	const handleSearch = useCallback(async (text: string) => {
-		const result = await searchMethod({ text, filterRooms: false });
+		const { localSearchData, usernames } = await localSearch({ text, rid: '' });
+		setSearch(localSearchData);
+		const result = await searchMethod({ text, filterRooms: false, localSearchData, usernames });
 		setSearch(result);
 	}, []);
 
