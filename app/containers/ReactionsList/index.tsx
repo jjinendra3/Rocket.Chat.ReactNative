@@ -1,6 +1,6 @@
-import React from 'react';
-import { View } from 'react-native';
-import ScrollableTabView from 'react-native-scrollable-tab-view';
+import React, { useState } from 'react';
+import { View, Dimensions } from 'react-native';
+import { TabView } from 'react-native-tab-view';
 
 import { TGetCustomEmoji } from '../../definitions/IEmoji';
 import { IReaction } from '../../definitions';
@@ -16,17 +16,33 @@ interface IReactionsListProps {
 }
 
 const ReactionsList = ({ reactions, getCustomEmoji }: IReactionsListProps): React.ReactElement => {
-	// sorting reactions in descending order on the basic of number of users reacted
-	const sortedReactions = reactions?.sort((reaction1, reaction2) => reaction2.usernames.length - reaction1.usernames.length);
+
+	const sortedReactions = reactions?.sort((a, b) => b.usernames.length - a.usernames.length) || [];
 	const allTabLabel = { emoji: I18n.t('All'), usernames: [], names: [], _id: 'All' };
+
+	const [index, setIndex] = useState(0);
+	const [routes] = useState([
+		{ key: 'all', title: I18n.t('All') },
+		...sortedReactions.map(reaction => ({ key: reaction.emoji, title: reaction.emoji }))
+	]);
+
+	const renderScene = ({ route }: { route: { key: string } }) => {
+		if (route.key === 'all') {
+			return <AllTab reactions={sortedReactions} getCustomEmoji={getCustomEmoji} tabLabel={allTabLabel} />;
+		}
+		const reaction = sortedReactions.find(r => r.emoji === route.key);
+		return reaction ? <UsersList tabLabel={reaction} /> : null;
+	};
+
 	return (
 		<View style={styles.container} testID='reactionsList'>
-			<ScrollableTabView renderTabBar={() => <ReactionsTabBar getCustomEmoji={getCustomEmoji} />}>
-				<AllTab tabLabel={allTabLabel} reactions={sortedReactions} getCustomEmoji={getCustomEmoji} />
-				{sortedReactions?.map(reaction => (
-					<UsersList tabLabel={reaction} key={reaction.emoji} />
-				))}
-			</ScrollableTabView>
+			<TabView
+				navigationState={{ index, routes }}
+				renderScene={renderScene}
+				onIndexChange={setIndex}
+				initialLayout={{ width: Dimensions.get('window').width }}
+				renderTabBar={props => <ReactionsTabBar {...props} getCustomEmoji={getCustomEmoji} tabs={sortedReactions} />}
+			/>
 		</View>
 	);
 };
